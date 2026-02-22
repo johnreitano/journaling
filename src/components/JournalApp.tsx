@@ -1,29 +1,36 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { JournalEntry } from "@/lib/types";
+import { Folder, JournalEntry } from "@/lib/types";
 import {
   getAllEntries,
+  getAllFolders,
   saveEntry,
   deleteEntry as removeEntry,
   createEntry,
+  createFolder,
+  saveFolder,
+  deleteFolder as removeFolder,
 } from "@/lib/storage";
 import Sidebar from "./Sidebar";
 import Editor from "./Editor";
 
 export default function JournalApp() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // Load entries from localStorage on mount
+  // Load entries and folders from localStorage on mount
   useEffect(() => {
-    const stored = getAllEntries();
-    const sorted = stored.sort(
+    const storedEntries = getAllEntries();
+    const storedFolders = getAllFolders();
+    const sorted = storedEntries.sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
     setEntries(sorted);
+    setFolders(storedFolders);
     if (sorted.length > 0) {
       setActiveEntryId(sorted[0].id);
     }
@@ -35,8 +42,8 @@ export default function JournalApp() {
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
 
-  const handleCreate = useCallback(() => {
-    const entry = createEntry();
+  const handleCreate = useCallback((folderId?: string) => {
+    const entry = createEntry(folderId);
     setEntries((prev) => sortEntries([entry, ...prev]));
     setActiveEntryId(entry.id);
     setSidebarOpen(false);
@@ -63,6 +70,50 @@ export default function JournalApp() {
     [activeEntryId]
   );
 
+  const handleMoveToFolder = useCallback(
+    (entryId: string, folderId: string | undefined) => {
+      setEntries((prev) => {
+        const updated = prev.map((e) => {
+          if (e.id !== entryId) return e;
+          const { folderId: _old, ...rest } = e;
+          return folderId ? { ...rest, folderId } : rest;
+        });
+        updated.forEach((e) => {
+          if (e.id === entryId) saveEntry(e);
+        });
+        return updated;
+      });
+    },
+    []
+  );
+
+  const handleCreateFolder = useCallback((name: string) => {
+    const folder = createFolder(name);
+    setFolders((prev) => [...prev, folder]);
+  }, []);
+
+  const handleRenameFolder = useCallback((id: string, name: string) => {
+    setFolders((prev) => {
+      const updated = prev.map((f) => (f.id === id ? { ...f, name } : f));
+      const target = updated.find((f) => f.id === id);
+      if (target) saveFolder(target);
+      return updated;
+    });
+  }, []);
+
+  const handleDeleteFolder = useCallback((id: string) => {
+    removeFolder(id);
+    setFolders((prev) => prev.filter((f) => f.id !== id));
+    // Move entries that were in this folder to unfiled
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (e.folderId !== id) return e;
+        const { folderId: _removed, ...rest } = e;
+        return rest;
+      })
+    );
+  }, []);
+
   const activeEntry = entries.find((e) => e.id === activeEntryId);
 
   if (!loaded) {
@@ -77,12 +128,16 @@ export default function JournalApp() {
     <div className="h-screen flex bg-stone-50">
       <Sidebar
         entries={entries}
+        folders={folders}
         activeEntryId={activeEntryId}
         isOpen={sidebarOpen}
         onSelect={setActiveEntryId}
         onDelete={handleDelete}
         onCreate={handleCreate}
         onClose={() => setSidebarOpen(false)}
+        onCreateFolder={handleCreateFolder}
+        onDeleteFolder={handleDeleteFolder}
+        onRenameFolder={handleRenameFolder}
       />
 
       {/* Main content */}
@@ -118,7 +173,12 @@ export default function JournalApp() {
         {/* Editor or empty state */}
         <div className="flex-1 overflow-hidden">
           {activeEntry ? (
-            <Editor entry={activeEntry} onSave={handleSave} />
+            <Editor
+              entry={activeEntry}
+              folders={folders}
+              onSave={handleSave}
+              onMoveToFolder={handleMoveToFolder}
+            />
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-stone-400">
               <svg
@@ -138,7 +198,7 @@ export default function JournalApp() {
               </svg>
               <p className="text-sm">Create a new entry to start writing</p>
               <button
-                onClick={handleCreate}
+                onClick={() => handleCreate()}
                 className="mt-4 px-4 py-2 text-sm bg-stone-800 text-stone-50 rounded-lg hover:bg-stone-700 transition-colors"
               >
                 New Entry
