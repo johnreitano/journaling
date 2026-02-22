@@ -1,0 +1,37 @@
+[    3316ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <LoadingBoundary name="/" loading={null}>
+      <HTTPAccessFallbackBoundary notFound={<SegmentViewNode>} forbidden={undefined} unauthorized={undefined}>
+        <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<SegmentViewNode>} forbidden={undefined} ...>
+          <RedirectBoundary>
+            <RedirectErrorBoundary router={{...}}>
+              <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:<Fragment>, ...}} segmentPath={[...]} ...>
+                <SegmentViewNode type="page" pagePath="page.tsx">
+                  <SegmentTrieNode>
+                  <Home>
+                    <JournalApp>
+                      <div className="h-screen f...">
+                        <Sidebar entries={[...]} activeEntryId="ab1989b4-b..." isOpen={false} ...>
+                          <aside className={"\n      ..."}>
+                            <div>
+                            <div className="flex-1 ove...">
+                              <SidebarEntry entry={{id:"ab1989...", ...}} isActive={true} onSelect={function onSelect} ...>
+>                               <button
+>                                 onClick={function onClick}
+>                                 className="group w-full text-left px-3 py-2.5 rounded-lg transition-colors bg-stone-..."
+>                               >
+                                  <div className="flex items...">
+                                    <div>
+>                                   <button
+>                                     onClick={function onClick}
+>                                     className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-stone-300/50 t..."
+>                                     aria-label="Delete entry"
+>                                   >
+                        ...
+                ...
+              ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[    3316ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
