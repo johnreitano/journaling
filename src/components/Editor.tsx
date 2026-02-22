@@ -2,9 +2,21 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import dynamic from "next/dynamic";
-import { JournalEntry } from "@/lib/types";
+import { JournalEntry, EntryColor } from "@/lib/types";
+import { ColorPicker } from "./ColorPicker";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+
+const COLOR_BORDER_CLASSES: Record<EntryColor | string, string> = {
+  red: "border-l-4 border-l-red-500",
+  orange: "border-l-4 border-l-orange-500",
+  yellow: "border-l-4 border-l-yellow-500",
+  green: "border-l-4 border-l-green-500",
+  blue: "border-l-4 border-l-blue-500",
+  purple: "border-l-4 border-l-purple-500",
+  null: "",
+  undefined: "",
+};
 
 interface EditorProps {
   entry: JournalEntry;
@@ -14,6 +26,7 @@ interface EditorProps {
 export default function Editor({ entry, onSave }: EditorProps) {
   const [title, setTitle] = useState(entry.title);
   const [content, setContent] = useState(entry.content);
+  const [color, setColor] = useState<EntryColor>(entry.color ?? null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const entryRef = useRef(entry);
 
@@ -21,22 +34,24 @@ export default function Editor({ entry, onSave }: EditorProps) {
   useEffect(() => {
     setTitle(entry.title);
     setContent(entry.content);
+    setColor(entry.color ?? null);
     entryRef.current = entry;
   }, [entry.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scheduleSave = useCallback(
-    (newTitle: string, newContent: string) => {
+    (newTitle: string, newContent: string, newColor: EntryColor = color) => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
         onSave({
           ...entryRef.current,
           title: newTitle,
           content: newContent,
+          color: newColor,
           updatedAt: new Date().toISOString(),
         });
       }, 800);
     },
-    [onSave]
+    [color, onSave]
   );
 
   // Flush on unmount
@@ -57,6 +72,11 @@ export default function Editor({ entry, onSave }: EditorProps) {
     scheduleSave(title, val);
   };
 
+  const handleColorChange = (newColor: EntryColor) => {
+    setColor(newColor);
+    scheduleSave(title, content, newColor);
+  };
+
   const createdDate = new Date(entry.createdAt).toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -65,8 +85,12 @@ export default function Editor({ entry, onSave }: EditorProps) {
   });
 
   return (
-    <div className="flex flex-col h-full">
+    <div className={`flex flex-col h-full ${COLOR_BORDER_CLASSES[color || "null"]}`}>
       <div className="px-6 pt-6 pb-4 border-b border-stone-200">
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <div className="flex-1" />
+          <ColorPicker selectedColor={color} onColorChange={handleColorChange} />
+        </div>
         <input
           type="text"
           value={title}

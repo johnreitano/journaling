@@ -1,6 +1,16 @@
 "use client";
 
-import { JournalEntry } from "@/lib/types";
+import { JournalEntry, EntryColor } from "@/lib/types";
+
+const COLOR_CLASSES: Record<EntryColor, string> = {
+  red: "bg-red-500",
+  orange: "bg-orange-500",
+  yellow: "bg-yellow-500",
+  green: "bg-green-500",
+  blue: "bg-blue-500",
+  purple: "bg-purple-500",
+  null: "",
+};
 
 interface SidebarEntryProps {
   entry: JournalEntry;
@@ -41,9 +51,16 @@ export default function SidebarEntry({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-stone-800 truncate">
-            {entry.title || "Untitled"}
-          </p>
+          <div className="flex items-center gap-2">
+            {entry.color && (
+              <div
+                className={`w-2 h-2 rounded-full shrink-0 ${COLOR_CLASSES[entry.color]}`}
+              />
+            )}
+            <p className="text-sm font-medium text-stone-800 truncate">
+              {entry.title || "Untitled"}
+            </p>
+          </div>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-xs text-stone-400 shrink-0">{date}</span>
             {preview && (
