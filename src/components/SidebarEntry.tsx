@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { JournalEntry } from "@/lib/types";
 
 interface SidebarEntryProps {
@@ -9,7 +10,7 @@ interface SidebarEntryProps {
   onDelete: (id: string) => void;
 }
 
-export default function SidebarEntry({
+export default memo(function SidebarEntry({
   entry,
   isActive,
   onSelect,
@@ -78,4 +79,4 @@ export default function SidebarEntry({
       </div>
     </div>
   );
-}
+});

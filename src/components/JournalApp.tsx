@@ -11,6 +11,12 @@ import {
 import Sidebar from "./Sidebar";
 import Editor from "./Editor";
 
+// Defined outside the component so it is never recreated between renders
+const sortEntries = (list: JournalEntry[]) =>
+  [...list].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+
 export default function JournalApp() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
@@ -19,21 +25,13 @@ export default function JournalApp() {
 
   // Load entries from localStorage on mount
   useEffect(() => {
-    const stored = getAllEntries();
-    const sorted = stored.sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    );
+    const sorted = sortEntries(getAllEntries());
     setEntries(sorted);
     if (sorted.length > 0) {
       setActiveEntryId(sorted[0].id);
     }
     setLoaded(true);
   }, []);
-
-  const sortEntries = (list: JournalEntry[]) =>
-    [...list].sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    );
 
   const handleCreate = useCallback(() => {
     const entry = createEntry();
@@ -49,19 +47,20 @@ export default function JournalApp() {
     );
   }, []);
 
-  const handleDelete = useCallback(
-    (id: string) => {
-      removeEntry(id);
-      setEntries((prev) => {
-        const remaining = prev.filter((e) => e.id !== id);
-        if (activeEntryId === id) {
-          setActiveEntryId(remaining.length > 0 ? remaining[0].id : null);
-        }
-        return remaining;
-      });
-    },
-    [activeEntryId]
-  );
+  // No dependency on activeEntryId — uses functional setActiveEntryId instead
+  // so this callback is stable across active-entry changes.
+  const handleDelete = useCallback((id: string) => {
+    removeEntry(id);
+    setEntries((prev) => {
+      const remaining = prev.filter((e) => e.id !== id);
+      setActiveEntryId((currentId) =>
+        currentId === id ? (remaining.length > 0 ? remaining[0].id : null) : currentId
+      );
+      return remaining;
+    });
+  }, []);
+
+  const handleCloseSidebar = useCallback(() => setSidebarOpen(false), []);
 
   const activeEntry = entries.find((e) => e.id === activeEntryId);
 
@@ -82,7 +81,7 @@ export default function JournalApp() {
         onSelect={setActiveEntryId}
         onDelete={handleDelete}
         onCreate={handleCreate}
-        onClose={() => setSidebarOpen(false)}
+        onClose={handleCloseSidebar}
       />
 
       {/* Main content */}

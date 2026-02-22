@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { JournalEntry } from "@/lib/types";
 
@@ -17,8 +17,14 @@ export default function Editor({ entry, onSave }: EditorProps) {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const entryRef = useRef(entry);
 
-  // Sync when switching entries
+  // Sync when switching entries. Clear any pending debounced save first to
+  // prevent the old entry's pending content from being written onto the new
+  // entry once entryRef.current is updated.
   useEffect(() => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
     setTitle(entry.title);
     setContent(entry.content);
     entryRef.current = entry;
@@ -39,7 +45,7 @@ export default function Editor({ entry, onSave }: EditorProps) {
     [onSave]
   );
 
-  // Flush on unmount
+  // Clear timer on unmount
   useEffect(() => {
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -57,12 +63,17 @@ export default function Editor({ entry, onSave }: EditorProps) {
     scheduleSave(title, val);
   };
 
-  const createdDate = new Date(entry.createdAt).toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  // Memoized so date formatting doesn't run on every keystroke
+  const createdDate = useMemo(
+    () =>
+      new Date(entry.createdAt).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+    [entry.createdAt]
+  );
 
   return (
     <div className="flex flex-col h-full">

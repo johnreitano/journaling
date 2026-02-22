@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { JournalEntry } from "@/lib/types";
 import SidebarEntry from "./SidebarEntry";
 
@@ -22,6 +23,16 @@ export default function Sidebar({
   onCreate,
   onClose,
 }: SidebarProps) {
+  // Stable combined handler so memoized SidebarEntry children don't re-render
+  // when only unrelated state (e.g. editor content) changes.
+  const handleSelect = useCallback(
+    (id: string) => {
+      onSelect(id);
+      onClose();
+    },
+    [onSelect, onClose]
+  );
+
   return (
     <>
       {/* Mobile overlay */}
@@ -80,10 +91,7 @@ export default function Sidebar({
                 key={entry.id}
                 entry={entry}
                 isActive={entry.id === activeEntryId}
-                onSelect={(id) => {
-                  onSelect(id);
-                  onClose();
-                }}
+                onSelect={handleSelect}
                 onDelete={onDelete}
               />
             ))

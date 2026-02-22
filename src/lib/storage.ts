@@ -17,8 +17,12 @@ export function getAllEntries(): JournalEntry[] {
   }
 }
 
-export function getEntry(id: string): JournalEntry | undefined {
-  return getAllEntries().find((e) => e.id === id);
+function persist(entries: JournalEntry[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  } catch (e) {
+    console.error("Failed to persist journal entries:", e);
+  }
 }
 
 export function saveEntry(entry: JournalEntry): void {
@@ -29,12 +33,11 @@ export function saveEntry(entry: JournalEntry): void {
   } else {
     entries.push(entry);
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  persist(entries);
 }
 
 export function deleteEntry(id: string): void {
-  const entries = getAllEntries().filter((e) => e.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  persist(getAllEntries().filter((e) => e.id !== id));
 }
 
 export function createEntry(): JournalEntry {
