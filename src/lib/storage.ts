@@ -6,12 +6,26 @@ function isBrowser(): boolean {
   return typeof window !== "undefined";
 }
 
+function isValidEntry(entry: unknown): entry is JournalEntry {
+  if (!entry || typeof entry !== "object") return false;
+  const e = entry as Record<string, unknown>;
+  return (
+    typeof e.id === "string" &&
+    typeof e.title === "string" &&
+    typeof e.content === "string" &&
+    typeof e.createdAt === "string" &&
+    typeof e.updatedAt === "string"
+  );
+}
+
 export function getAllEntries(): JournalEntry[] {
   if (!isBrowser()) return [];
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return [];
   try {
-    return JSON.parse(raw) as JournalEntry[];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isValidEntry);
   } catch {
     return [];
   }
