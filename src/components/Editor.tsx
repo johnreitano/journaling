@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 import { JournalEntry } from "@/lib/types";
+import ShareButtons from "./ShareButtons";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -76,6 +77,7 @@ export default function Editor({ entry, onSave }: EditorProps) {
         />
         <p className="text-xs text-stone-400 mt-1">{createdDate}</p>
       </div>
+      <ShareButtons entry={entry} />
       <div className="flex-1 overflow-auto" data-color-mode="light">
         <MDEditor
           value={content}
